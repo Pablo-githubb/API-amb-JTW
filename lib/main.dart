@@ -7,24 +7,21 @@ import 'package:api_amb_jwt/presentation/viewmodels/user_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
-
 void main() {
   runApp(
     MultiProvider(
       providers: [
         Provider<IUserService>(create: (context) => UserService()),
         Provider<IUserRepository>(
-          create: (context) =>
-              UserRepository(userService: context.read()),
+          create: (context) => UserRepository(userService: context.read()),
         ),
 
-    // TODO: IMPLEMENTARRRRR
-    //Nous providers de autentication i authoritation
-    //    Provider<IProductService>(create: (context) => ProductService()),
-    //    Provider<IProductRepository>(
-    //      create: (context) => ProductRepository(userService(): context.read()),
-    //    ),
+        // TODO: IMPLEMENTARRRRR
+        //Nous providers de autentication i authoritation
+        //    Provider<IProductService>(create: (context) => ProductService()),
+        //    Provider<IProductRepository>(
+        //      create: (context) => ProductRepository(userService(): context.read()),
+        //    ),
       ],
       child: const MyApp(),
     ),
@@ -41,17 +38,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UserVM(userRepository: context.read()),
         ),
-    // TODO: IMPLEMENTARRRRR
-    //    ChangeNotifierProvider(
-    //      create: (context) => ProductVM(productRepository: context.read()),
-    //    ),
+        // TODO: IMPLEMENTARRRRR
+        //    ChangeNotifierProvider(
+        //      create: (context) => ProductVM(productRepository: context.read()),
+        //    ),
       ],
       child: MaterialApp(
         title: 'API-amb-JWT',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlueAccent),
         ),
-        home: MyHomePage(title: '',),
+        home: MyHomePage(title: ''),
       ),
     );
   }
@@ -69,7 +66,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   var selectedIndex = 0;
 
-
   @override
   Widget build(BuildContext context) {
     Widget page;
@@ -79,7 +75,6 @@ class _MyHomePageState extends State<MyHomePage> {
         break;
       default:
         throw UnimplementedError('no widget for $selectedIndex');
-
     }
 
     return LayoutBuilder(
@@ -89,8 +84,10 @@ class _MyHomePageState extends State<MyHomePage> {
             body: Row(children: [MainArea(page: page)]),
             bottomNavigationBar: NavigationBar(
               destinations: [
-                NavigationDestination(icon: Icon(Icons.exit_to_app), label: 'Login'),
-              
+                NavigationDestination(
+                  icon: Icon(Icons.exit_to_app),
+                  label: 'Login',
+                ),
               ],
               selectedIndex: selectedIndex,
               onDestinationSelected: (value) {
@@ -106,7 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 SafeArea(
                   child: NavigationRail(
-                    extended: constraints.maxWidth >= 800, 
+                    extended: constraints.maxWidth >= 800,
                     destinations: [
                       NavigationRailDestination(
                         icon: Icon(Icons.exit_to_app),
@@ -131,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-//Classe encarregada del canvia de la barra de navegació del les pàgines. 
+//Classe encarregada del canvia de la barra de navegació del les pàgines.
 class MainArea extends StatelessWidget {
   const MainArea({super.key, required this.page});
 
@@ -148,8 +145,6 @@ class MainArea extends StatelessWidget {
   }
 }
 
-
-
 //Finestr de Login al iniciar l'aplicaició
 
 class LoginPage extends StatefulWidget {
@@ -161,7 +156,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   @override
-  Widget build(BuildContext context) {
+  build(BuildContext context)  {
     UserVM vm = context.watch<UserVM>();
     return Center(
       child: SingleChildScrollView(
@@ -184,13 +179,9 @@ class _LoginPageState extends State<LoginPage> {
 
                   SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed:
-                        vm.emailController.text.isNotEmpty &&
-                            vm.passwordController.text.isNotEmpty
-                        ? () async {
-                            await vm.login();
-                          }
-                        : null,
+                    onPressed: () {
+                      vm.login();
+                    },
                     child: Text('Login'),
                   ),
 
