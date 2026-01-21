@@ -10,24 +10,35 @@ class ProductVM extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   ProductVM({required IProductRepository productRepository})
-      : _productRepository = productRepository;
+    : _productRepository = productRepository;
 
-  Future<void> afegirProducte(String title, double price) async {
+  Future<void> afegirProducte(
+    String title,
+    String description,
+    double price,
+  ) async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
 
     try {
       final newProduct = Product(
-        userId: 0, // El backend hauria de gestionar això o ignorar-ho si utilitza auth.uid()
+        userId:
+            '', //Supabase assigna l'ID de l'usuari automàticament. No cal proporcionar-lo, l'inicio amb una cadena buida solament
         title: title,
         price: price,
-        description: 'Descripció per defecte', // O passar-ho per paràmetre
+        description: description,
         createdAt: DateTime.now(),
-        id: 0 // El backend generarà l'ID
+        id: 0, //Supabase assigna l'ID automàticament. No cal proporcionar-lo, l'inicio amb 0 solament
       );
-      final createdProduct = await _productRepository.afegirProducte(newProduct);
+      final createdProduct = await _productRepository.afegirProducte(
+        newProduct,
+      );
       products.add(createdProduct);
+      
+      // Update the products list if necessary or handled by llistaProdutes()
+      await llistarProductes();
+      
     } catch (e) {
       errorMessage = e.toString();
     } finally {
@@ -36,7 +47,23 @@ class ProductVM extends ChangeNotifier {
     }
   }
 
-  Future<void> llistaProdutes() async {
+  Future<void> eliminarProducte(int id) async {
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      await _productRepository.deleteProduct(id);
+      products.removeWhere((product) => product.id == id);
+    } catch (e) {
+      errorMessage = e.toString();
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> llistarProductes() async {
     isLoading = true;
     errorMessage = null;
     notifyListeners();
