@@ -16,16 +16,43 @@ void main() {
           create: (context) => UserRepository(userService: context.read()),
         ),
 
-        // TODO: IMPLEMENTARRRRR
-        //Nous providers de autentication i authoritation
-        //    Provider<IProductService>(create: (context) => ProductService()),
-        //    Provider<IProductRepository>(
-        //      create: (context) => ProductRepository(userService(): context.read()),
-        //    ),
+        Provider<IProductService>(create: (context) => ProductService()),
+        Provider<IProductRepository>(
+          create: (context) => ProductRepository(
+            productService: context.read(),
+            userRepository: context.read(),
+          ),
+        ),
       ],
       child: const MyApp(),
     ),
   );
+}
+
+//Finestr de Login al iniciar l'aplicaició
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+//Classe encarregada del canvia de la barra de navegació del les pàgines.
+class MainArea extends StatelessWidget {
+  final Widget page;
+
+  const MainArea({super.key, required this.page});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        child: page,
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -38,10 +65,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (context) => UserVM(userRepository: context.read()),
         ),
-        // TODO: IMPLEMENTARRRRR
-        //    ChangeNotifierProvider(
-        //      create: (context) => ProductVM(productRepository: context.read()),
-        //    ),
+        ChangeNotifierProvider(
+          create: (context) => ProductVM(productRepository: context.read()),
+        ),
       ],
       child: MaterialApp(
         title: 'API-amb-JWT',
@@ -55,12 +81,58 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
   final String title;
+
+  const MyHomePage({super.key, required this.title});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  @override
+  build(BuildContext context)  {
+    UserVM vm = context.watch<UserVM>();
+    return Center(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  TextField(
+                    controller: vm.emailController,
+                    decoration: InputDecoration(labelText: 'Enter Username'),
+                  ),
+                  SizedBox(height: 20),
+                  TextField(
+                    controller: vm.passwordController,
+                    decoration: InputDecoration(labelText: 'Enter Password'),
+                  ),
+
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      vm.login();
+                    },
+                    child: Text('Login'),
+                  ),
+
+                  if (vm.authenticated)
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text('You are logged in as: ${vm.email}'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -124,78 +196,6 @@ class _MyHomePageState extends State<MyHomePage> {
           );
         }
       },
-    );
-  }
-}
-
-//Classe encarregada del canvia de la barra de navegació del les pàgines.
-class MainArea extends StatelessWidget {
-  const MainArea({super.key, required this.page});
-
-  final Widget page;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: page,
-      ),
-    );
-  }
-}
-
-//Finestr de Login al iniciar l'aplicaició
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  @override
-  build(BuildContext context)  {
-    UserVM vm = context.watch<UserVM>();
-    return Center(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextField(
-                    controller: vm.emailController,
-                    decoration: InputDecoration(labelText: 'Enter Username'),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: vm.passwordController,
-                    decoration: InputDecoration(labelText: 'Enter Password'),
-                  ),
-
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      vm.login();
-                    },
-                    child: Text('Login'),
-                  ),
-
-                  if (vm.authenticated)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text('You are logged in as: ${vm.email}'),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
