@@ -53,7 +53,7 @@ class ProductVM extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _productRepository.deleteProduct(id);
+      await _productRepository.eliminarProducte(id);
       products.removeWhere((product) => product.id == id);
     } catch (e) {
       errorMessage = e.toString();

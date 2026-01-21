@@ -38,13 +38,14 @@ class _ProductListPageState extends State<ProductListPage> {
                   subtitle: Text('${product.description} - ${product.price}€'),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),
-                    onPressed: () async {
-                      // Confirm deletion dialog could be added here
-                      await productVM.eliminarProducte(product.id);
-                      if (productVM.errorMessage != null && context.mounted) {
-                         ScaffoldMessenger.of(context).showSnackBar(
-                           SnackBar(content: Text('Error: ${productVM.errorMessage}')),
-                         );
+                    onPressed: () {
+                      productVM.eliminarProducte(product.id);
+                      if (context.mounted) {
+                        if (productVM.errorMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Producte eliminat')),
+                          );
+                        }
                       }
                     },
                   ),

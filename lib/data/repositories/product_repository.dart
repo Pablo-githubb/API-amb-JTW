@@ -5,7 +5,7 @@ import 'package:api_amb_jwt/data/services/product_service.dart';
 abstract class IProductRepository {
   Future<Product> afegirProducte(Product product);
   Future<List<Product>> getProducts();
-  Future<void> deleteProduct(int id);
+  Future<void> eliminarProducte(int id);
 }
 
 class ProductRepository implements IProductRepository {
@@ -31,7 +31,7 @@ class ProductRepository implements IProductRepository {
   }
 
   @override
-  Future<void> deleteProduct(int id) async {
-    return await _productService.deleteProduct(_token, id);
+  Future<void> eliminarProducte(int id) async {
+    return await _productService.eliminarProducte(_token, id);
   }
 }

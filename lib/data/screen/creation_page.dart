@@ -76,9 +76,9 @@ class _ProductCreationPageState extends State<ProductCreationPage> {
                   const CircularProgressIndicator()
                 else
                   ElevatedButton(
-                    onPressed: () async {
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        await productVM.afegirProducte(
+                        productVM.afegirProducte(
                           _titleController.text,
                           _descriptionController.text,
                           double.parse(_priceController.text),
@@ -97,7 +97,6 @@ class _ProductCreationPageState extends State<ProductCreationPage> {
                                 content: Text('Producte creat!!!'),
                               ),
                             );
-                            // Optional: clear form
                             _titleController.clear();
                             _descriptionController.clear();
                             _priceController.clear();

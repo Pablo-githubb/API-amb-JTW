@@ -27,12 +27,12 @@ class _LoginPageState extends State<LoginPage> {
                 children: <Widget>[
                   TextField(
                     controller: vm.emailController,
-                    decoration: InputDecoration(labelText: 'Enter Username'),
+                    decoration: InputDecoration(labelText: 'Introduix el email'),
                   ),
                   SizedBox(height: 20),
                   TextField(
                     controller: vm.passwordController,
-                    decoration: InputDecoration(labelText: 'Enter Password'),
+                    decoration: InputDecoration(labelText: 'Introduix la contrasenya'),
                   ),
 
                   SizedBox(height: 20),

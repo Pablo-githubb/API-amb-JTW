@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 abstract class IProductService {
   Future<Product> crearProducte(String token, Product product);
   Future<List<Product>> getProducts(String token);
-  Future<void> deleteProduct(String token, int id);
+  Future<void> eliminarProducte(String token, int id);
 }
 
 ///acces_token meu: eyJhbGciOiJIUzI1NiIsImtpZCI6ImlFVktCVVlobzdibjVZMWMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2l0dnl2dnhvbm5zZG9xb2t2aWt3LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwZTZlNWY3MS0xOWFiLTRhOTktYWZkYi04MDUyZDQwOGI5NTciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzY5MDE5NTg5LCJpYXQiOjE3NjkwMTU5ODksImVtYWlsIjoicGFibG9tYXNvQGllc2VicmUuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbF92ZXJpZmllZCI6dHJ1ZX0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NjkwMTU5ODl9XSwic2Vzc2lvbl9pZCI6ImQ1NDRkMGFlLTc5YmUtNDhmZi04ODZmLWRlYTVlMjkwZDZmZSIsImlzX2Fub255bW91cyI6ZmFsc2V9.XaAkJ8e1mLWdwi99FSGx1ayDnPJ-PeJgPytEq5UfxKU
@@ -58,7 +58,7 @@ class ProductService implements IProductService {
   }
 
   @override
-  Future<void> deleteProduct(String token, int id) async {
+  Future<void> eliminarProducte(String token, int id) async {
     final response = await http.delete(
       Uri.parse('$_appUrl?id=eq.$id'),
       headers: {'apikey': _apiKey, 'Authorization': 'Bearer $token'},
