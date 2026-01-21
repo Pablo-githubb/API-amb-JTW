@@ -7,36 +7,43 @@ class Product {
   final DateTime createdAt;
 
   Product(
-    this.userId,
-    this.description,
-    this.createdAt, {
-    required this.id,
+    {
+    required this.userId,
     required this.title,
     required this.price,
+    required this.description,
+    required this.createdAt,     
+    required this.id
   });
 
-  /**
-   * Estructura del body del JSON de cada producte a Supabase
-   */
+  /// Estructura del body del JSON de cada producte a Supabase
+   
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
-      json['userid'],
-      title: json['title'],
-      price: (json['price'] as num).toDouble(),
-      json['description'],
-      DateTime.parse(json['data']),
-      id: json['id'],
+      userId: json['user_id'] ?? 0,
+      title: json['title'] ?? '',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      description: json['description'] ?? '',
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
+      id: json['id'] ?? 0
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'user_id': userId,
+    final Map<String, dynamic> data = {
       'title': title,
       'price': price,
       'description': description,
-      'created_at': createdAt,
-      'id': id,
     };
+    
+    // Només incloure user_id i id si són vàlids/necessaris
+    // Suposant que Supabase genera ID i createdAt, i user_id via auth
+    if (userId != 0) data['user_id'] = userId;
+    // data['created_at'] = createdAt.toIso8601String(); // Normalment deixem que ho posi la BD
+    if (id != 0) data['id'] = id;
+    
+    return data;
   }
 }

@@ -18,7 +18,14 @@ class ProductVM extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final newProduct = Product(title: title, price: price, id: 0);
+      final newProduct = Product(
+        userId: 0, // El backend hauria de gestionar això o ignorar-ho si utilitza auth.uid()
+        title: title,
+        price: price,
+        description: 'Descripció per defecte', // O passar-ho per paràmetre
+        createdAt: DateTime.now(),
+        id: 0 // El backend generarà l'ID
+      );
       final createdProduct = await _productRepository.afegirProducte(newProduct);
       products.add(createdProduct);
     } catch (e) {

@@ -1,5 +1,6 @@
 import 'package:api_amb_jwt/data/repositories/product_repository.dart';
 import 'package:api_amb_jwt/data/repositories/user_repository.dart';
+import 'package:api_amb_jwt/data/screen/home_page.dart';
 import 'package:api_amb_jwt/data/services/product_service.dart';
 import 'package:api_amb_jwt/data/services/user_service.dart';
 import 'package:api_amb_jwt/presentation/viewmodels/product_vm.dart';
@@ -29,32 +30,6 @@ void main() {
   );
 }
 
-//Finestr de Login al iniciar l'aplicaició
-
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-//Classe encarregada del canvia de la barra de navegació del les pàgines.
-class MainArea extends StatelessWidget {
-  final Widget page;
-
-  const MainArea({super.key, required this.page});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        color: Theme.of(context).colorScheme.primaryContainer,
-        child: page,
-      ),
-    );
-  }
-}
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -76,126 +51,6 @@ class MyApp extends StatelessWidget {
         ),
         home: MyHomePage(title: ''),
       ),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  final String title;
-
-  const MyHomePage({super.key, required this.title});
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  @override
-  build(BuildContext context)  {
-    UserVM vm = context.watch<UserVM>();
-    return Center(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  TextField(
-                    controller: vm.emailController,
-                    decoration: InputDecoration(labelText: 'Enter Username'),
-                  ),
-                  SizedBox(height: 20),
-                  TextField(
-                    controller: vm.passwordController,
-                    decoration: InputDecoration(labelText: 'Enter Password'),
-                  ),
-
-                  SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      vm.login();
-                    },
-                    child: Text('Login'),
-                  ),
-
-                  if (vm.authenticated)
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text('You are logged in as: ${vm.email}'),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  var selectedIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    Widget page;
-    switch (selectedIndex) {
-      case 0:
-        page = LoginPage();
-        break;
-      default:
-        throw UnimplementedError('no widget for $selectedIndex');
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < 450) {
-          return Scaffold(
-            body: Row(children: [MainArea(page: page)]),
-            bottomNavigationBar: NavigationBar(
-              destinations: [
-                NavigationDestination(
-                  icon: Icon(Icons.exit_to_app),
-                  label: 'Login',
-                ),
-              ],
-              selectedIndex: selectedIndex,
-              onDestinationSelected: (value) {
-                setState(() {
-                  selectedIndex = value;
-                });
-              },
-            ),
-          );
-        } else {
-          return Scaffold(
-            body: Row(
-              children: [
-                SafeArea(
-                  child: NavigationRail(
-                    extended: constraints.maxWidth >= 800,
-                    destinations: [
-                      NavigationRailDestination(
-                        icon: Icon(Icons.exit_to_app),
-                        label: Text('Login'),
-                      ),
-                    ],
-                    selectedIndex: selectedIndex,
-                    onDestinationSelected: (value) {
-                      setState(() {
-                        selectedIndex = value;
-                      });
-                    },
-                  ),
-                ),
-                MainArea(page: page),
-              ],
-            ),
-          );
-        }
-      },
     );
   }
 }
