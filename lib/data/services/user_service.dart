@@ -11,6 +11,7 @@ abstract class IUserService{
 class UserService implements IUserService {
   @override
   //Aquest métode es el cridador de la api per poder validar el nostre usuari. En el meu cas, es el meu correu (pablomaso@iesebre.com) i contrasenya (flutter)
+  /// Valida les credencials de l'usuari (email i contrasenya) contra l'API d'autenticació de Supabase.
   Future<User> validateLogin(String email, String password) async {
     final url = Uri.parse('https://itvyvvxonnsdoqokvikw.supabase.co/auth/v1/token?grant_type=password');
     final response = await http.post(

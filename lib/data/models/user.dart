@@ -9,6 +9,8 @@ class User {
     required this.authenticated,
     required this.accessToken,
   });
+
+  /// Crea un objecte User a partir de la resposta JSON d'autenticació.
   factory User.fromJson(Map<String, dynamic> json) {
     if (json.containsKey('access_token') && json.containsKey('user')) {
       final userJson = json['user'] as Map<String, dynamic>;

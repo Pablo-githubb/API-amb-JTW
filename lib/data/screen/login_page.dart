@@ -4,6 +4,7 @@ import 'package:api_amb_jwt/presentation/viewmodels/user_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// Finestra de Login al iniciar l'aplicació per autenticar l'usuari.
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 

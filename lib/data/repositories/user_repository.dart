@@ -16,11 +16,13 @@ class UserRepository implements IUserRepository {
 
   //Retorna true si hi ha un usuari i la seva propietat authenticated és certa
   @override
+  /// Comprova si l'usuari actual ha iniciat sessió correctament.
   bool get authenticated {
     return _user == null || !_user!.authenticated ? false : true;
   }
 
   @override
+  /// Retorna l'objecte User complet si està autenticat, sinó llança excepció.
   User get email {
     if (_user == null) {
       throw Exception('User not authenticated');
@@ -29,6 +31,7 @@ class UserRepository implements IUserRepository {
   }
 
   @override
+  /// Valida les credencials del login mitjançant el servei i emmagatzema l'usuari resultant.
   Future<User> validateLogin(String email, String password) async {
     _user = await _userService.validateLogin(email, password);
     return _user!;

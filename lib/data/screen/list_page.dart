@@ -2,6 +2,7 @@ import 'package:api_amb_jwt/presentation/viewmodels/product_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// Finestra on es mostra el llistat complet de productes amb l'opció d'eliminar-los.
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
 
@@ -10,15 +11,6 @@ class ProductListPage extends StatefulWidget {
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  @override
-  void initState() {
-    super.initState();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProductVM>().llistarProductes();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final productVM = context.watch<ProductVM>();
@@ -53,5 +45,14 @@ class _ProductListPageState extends State<ProductListPage> {
               },
             ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductVM>().llistarProductes();
+    });
   }
 }

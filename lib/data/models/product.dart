@@ -16,7 +16,7 @@ class Product {
   });
 
   /// Estructura del body del JSON de cada producte a Supabase
-
+  /// Crea una instància de Product a partir d'un mapa JSON.
   factory Product.fromJson(Map<String, dynamic> json) {
     DateTime createdDate;
     if (json['created_at'] != null) {
@@ -36,7 +36,8 @@ class Product {
       id: json['id'] ?? 0,
     );
   }
-
+  
+  /// Converteix la instància de Product a un mapa JSON per enviar a l'API.
   Map<String, dynamic> toJson() => {
     'title': title,
     'price': price,

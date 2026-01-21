@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 //Classe encarregada del canvia de la barra de navegació del les pàgines.
+/// Classe principal per a la gestió de la interfície i canvis de pantalla.
 class MainArea extends StatelessWidget {
   final Widget page;
 
@@ -77,8 +78,6 @@ class _MyHomePageState extends State<MyHomePage> {
         page = const ProductListPage();
         break;
       case 2:
-        // Logout case, but we handle it in onDestinationSelected,
-        // so this is just a fallback or temporary view
         page = const Center(child: CircularProgressIndicator());
         break;
       default:
@@ -88,11 +87,11 @@ class _MyHomePageState extends State<MyHomePage> {
     final destinations = [
       const NavigationRailDestination(
         icon: Icon(Icons.add_circle_outline),
-        label: Text('Creation'),
+        label: Text('Crear'),
       ),
       const NavigationRailDestination(
         icon: Icon(Icons.list),
-        label: Text('List'),
+        label: Text('Llistar'),
       ),
       const NavigationRailDestination(
         icon: Icon(Icons.logout),
@@ -116,11 +115,12 @@ class _MyHomePageState extends State<MyHomePage> {
               ],
               selectedIndex: selectedIndex,
               onDestinationSelected: (value) {
+                //Si fem clic a la casella de Logout, s'ens treu la sessió automàticament
                 if (value == 2) {
                   userVM.logout();
                   // Reset index or handle navigation
                   setState(() {
-                    selectedIndex = 0; // go back to creation or default
+                    selectedIndex = 0;
                   });
                 } else {
                   setState(() {

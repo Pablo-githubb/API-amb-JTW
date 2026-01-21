@@ -12,6 +12,7 @@ class ProductVM extends ChangeNotifier {
   ProductVM({required IProductRepository productRepository})
     : _productRepository = productRepository;
 
+  /// Gestiona la creació d'un nou producte, crida al repositori i actualitza la llista local.
   Future<void> afegirProducte(
     String title,
     String description,
@@ -47,6 +48,7 @@ class ProductVM extends ChangeNotifier {
     }
   }
 
+  /// Gestiona l'eliminació d'un producte per ID i actualitza l'estat local.
   Future<void> eliminarProducte(int id) async {
     isLoading = true;
     errorMessage = null;
@@ -63,6 +65,7 @@ class ProductVM extends ChangeNotifier {
     }
   }
 
+  /// Obté la llista de productes des del repositori i actualitza l'estat.
   Future<void> llistarProductes() async {
     isLoading = true;
     errorMessage = null;

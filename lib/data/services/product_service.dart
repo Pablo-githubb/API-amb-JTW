@@ -17,6 +17,7 @@ class ProductService implements IProductService {
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml0dnl2dnhvbm5zZG9xb2t2aWt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0ODE1NTQsImV4cCI6MjA4MTA1NzU1NH0.6AxDj1flnnqtBvOjoKe9_MehqBwo0kNgxLGOf4VKQ5A';
 
   @override
+  /// Envia una petició POST per crear un nou producte a Supabase.
   Future<Product> crearProducte(String token, Product product) async {
     final response = await http.post(
       Uri.parse(_appUrl),
@@ -43,6 +44,7 @@ class ProductService implements IProductService {
   }
 
   @override
+  /// Obté la llista de productes des de l'API de Supabase.
   Future<List<Product>> getProducts(String token) async {
     final response = await http.get(
       Uri.parse('$_appUrl?select=*'),
@@ -58,6 +60,7 @@ class ProductService implements IProductService {
   }
 
   @override
+  /// Envia una petició DELETE per eliminar un producte identificat per [id].
   Future<void> eliminarProducte(String token, int id) async {
     final response = await http.delete(
       Uri.parse('$_appUrl?id=eq.$id'),

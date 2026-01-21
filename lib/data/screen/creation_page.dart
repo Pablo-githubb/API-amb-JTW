@@ -2,6 +2,7 @@ import 'package:api_amb_jwt/presentation/viewmodels/product_vm.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+/// Finestra de creació de productes on l'usuari pot introduir títol, descripció i preu.
 class ProductCreationPage extends StatefulWidget {
   const ProductCreationPage({super.key});
 

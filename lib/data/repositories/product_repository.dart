@@ -21,16 +21,19 @@ class ProductRepository implements IProductRepository {
   String get _token => _userRepository.email.accessToken;
 
   @override
+  /// Crida al servei per afegir un nou producte, passant el token d'autenticació actual.
   Future<Product> afegirProducte(Product product) async {
     return await _productService.crearProducte(_token, product);
   }
 
   @override
+  /// Recupera la llista de productes mitjançant el servei.
   Future<List<Product>> getProducts() async {
     return await _productService.getProducts(_token);
   }
 
   @override
+  /// Elimina un producte específic (per ID) utilitzant el servei.
   Future<void> eliminarProducte(int id) async {
     return await _productService.eliminarProducte(_token, id);
   }

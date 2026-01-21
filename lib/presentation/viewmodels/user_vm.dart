@@ -19,6 +19,7 @@ class UserVM extends ChangeNotifier {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+  /// Intenta iniciar sessió amb l'email i contrasenya introduïts als controladors.
   Future<void> login() async {
     try {
       _currentUser = await _userRepository.validateLogin(
@@ -31,6 +32,7 @@ class UserVM extends ChangeNotifier {
     }
   }
 
+  /// Tanca la sessió actual i notifica als listeners.
   Future<void> logout() async {
     _currentUser = null;
     notifyListeners();
