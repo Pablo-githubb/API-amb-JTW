@@ -2,9 +2,9 @@ import 'package:api_amb_jwt/data/models/user.dart';
 import 'package:api_amb_jwt/data/services/user_service.dart';
 
 abstract class IUserRepository {
-  User get username;
+  User get email;
   bool get authenticated;
-  Future<User> validateLogin(String username, String password);
+  Future<User> validateLogin(String email, String password);
 }
 
 class UserRepository implements IUserRepository {
@@ -21,7 +21,7 @@ class UserRepository implements IUserRepository {
   }
 
   @override
-  User get username {
+  User get email {
     if (_user == null) {
       throw Exception('User not authenticated');
     }
@@ -29,8 +29,8 @@ class UserRepository implements IUserRepository {
   }
 
   @override
-  Future<User> validateLogin(String username, String password) async {
-    _user = await _userService.validateLogin(username, password);
+  Future<User> validateLogin(String email, String password) async {
+    _user = await _userService.validateLogin(email, password);
     return _user!;
   }
 }

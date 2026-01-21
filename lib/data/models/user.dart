@@ -10,6 +10,16 @@ class User {
     required this.accessToken,
   });
   factory User.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('access_token') && json.containsKey('user')) {
+      final userJson = json['user'] as Map<String, dynamic>;
+      return User(
+        email: userJson['email'] ?? '',
+        password: '', // La contrasenya no es retornada per Supabase
+        authenticated: true,
+        accessToken: json['access_token'],
+      );
+    }
+
     return switch (json) {
       {
         'email': String email,
