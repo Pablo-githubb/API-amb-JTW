@@ -6,8 +6,6 @@ import 'package:api_amb_jwt/data/screen/creation_page.dart';
 import 'package:api_amb_jwt/data/screen/list_page.dart';
 import 'package:api_amb_jwt/data/screen/login_page.dart';
 import 'package:api_amb_jwt/data/screen/home_page.dart';
-import 'package:api_amb_jwt/data/services/product_service.dart';
-import 'package:api_amb_jwt/data/services/user_service.dart';
 import 'package:api_amb_jwt/presentation/viewmodels/product_vm.dart';
 import 'package:api_amb_jwt/presentation/viewmodels/user_vm.dart';
 import 'package:flutter/material.dart';
@@ -16,20 +14,8 @@ import 'package:provider/provider.dart';
 
 // -- Mocks --
 
-class MockUserService implements IUserService {
-  User? userToReturn;
-  Exception? exceptionToThrow;
-
-  @override
-  Future<User> validateLogin(String email, String password) async {
-    if (exceptionToThrow != null) throw exceptionToThrow!;
-    return userToReturn!;
-  }
-}
-
 class MockUserRepository implements IUserRepository {
   User? userToReturn;
-  Exception? exceptionToThrow;
 
   @override
   bool get authenticated => userToReturn?.authenticated ?? false;
@@ -42,7 +28,6 @@ class MockUserRepository implements IUserRepository {
 
   @override
   Future<User> validateLogin(String email, String password) async {
-    if (exceptionToThrow != null) throw exceptionToThrow!;
     userToReturn = User(
       email: email,
       password: '',
@@ -51,19 +36,6 @@ class MockUserRepository implements IUserRepository {
     );
     return userToReturn!;
   }
-}
-
-class MockProductService implements IProductService {
-  @override
-  Future<Product> crearProducte(String token, Product product) async {
-    return product;
-  }
-
-  @override
-  Future<List<Product>> getProducts(String token) async => [];
-
-  @override
-  Future<void> eliminarProducte(String token, int id) async {}
 }
 
 class MockProductRepository implements IProductRepository {
@@ -93,297 +65,159 @@ class MockProductRepository implements IProductRepository {
 
 // -- Helpers --
 
-Widget createLoginTestApp({
-  required MockUserRepository mockUserRepo,
-  required MockProductRepository mockProductRepo,
-}) {
+Product _makeProduct({int id = 1, String title = 'P', double price = 5.0, String desc = 'D'}) {
+  return Product(userId: 'u1', id: id, title: title, price: price, description: desc, createdAt: DateTime(2025));
+}
+
+Widget _loginApp(MockUserRepository userRepo, MockProductRepository productRepo) {
   return MultiProvider(
     providers: [
-      ChangeNotifierProvider(
-        create: (_) => UserVM(userRepository: mockUserRepo),
-      ),
-      ChangeNotifierProvider(
-        create: (_) => ProductVM(productRepository: mockProductRepo),
-      ),
+      ChangeNotifierProvider(create: (_) => UserVM(userRepository: userRepo)),
+      ChangeNotifierProvider(create: (_) => ProductVM(productRepository: productRepo)),
     ],
     child: const MaterialApp(home: Scaffold(body: LoginPage())),
   );
 }
 
-Widget createCreationTestApp({required MockProductRepository mockProductRepo}) {
+Widget _creationApp(MockProductRepository productRepo) {
   return ChangeNotifierProvider(
-    create: (_) => ProductVM(productRepository: mockProductRepo),
+    create: (_) => ProductVM(productRepository: productRepo),
     child: const MaterialApp(home: ProductCreationPage()),
   );
 }
 
-Widget createListTestApp({required MockProductRepository mockProductRepo}) {
+Widget _listApp(MockProductRepository productRepo) {
   return ChangeNotifierProvider(
-    create: (_) => ProductVM(productRepository: mockProductRepo),
+    create: (_) => ProductVM(productRepository: productRepo),
     child: const MaterialApp(home: ProductListPage()),
   );
 }
 
-Widget createHomeTestApp({
-  required MockUserRepository mockUserRepo,
-  required MockProductRepository mockProductRepo,
-  double width = 800,
-}) {
-  return MultiProvider(
-    providers: [
-      ChangeNotifierProvider(
-        create: (_) => UserVM(userRepository: mockUserRepo),
-      ),
-      ChangeNotifierProvider(
-        create: (_) => ProductVM(productRepository: mockProductRepo),
-      ),
-    ],
-    child: MaterialApp(
-      home: MediaQuery(
-        data: MediaQueryData(size: Size(width, 600)),
-        child: SizedBox(
-          width: width,
-          height: 600,
-          child: const MyHomePage(title: 'Test'),
-        ),
-      ),
+Future<void> _pumpHome(
+  WidgetTester tester, {
+  required MockUserRepository userRepo,
+  required MockProductRepository productRepo,
+  required double width,
+  required double height,
+  bool authenticated = true,
+}) async {
+  tester.view.physicalSize = Size(width, height);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  UserVM userVM = UserVM(userRepository: userRepo);
+  if (authenticated) {
+    userVM.emailController.text = 'test@test.com';
+    userVM.passwordController.text = 'pass';
+    await userVM.login();
+  }
+
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<UserVM>.value(value: userVM),
+        ChangeNotifierProvider(create: (_) => ProductVM(productRepository: productRepo)),
+      ],
+      child: const MaterialApp(home: MyHomePage(title: 'Test')),
     ),
   );
+  await tester.pumpAndSettle();
 }
 
 // ===================== TESTS =====================
 
 void main() {
   // ===== LoginPage =====
-  group('LoginPage Widget', () {
-    late MockUserRepository mockUserRepo;
-    late MockProductRepository mockProductRepo;
+  group('LoginPage', () {
+    late MockUserRepository userRepo;
+    late MockProductRepository productRepo;
 
     setUp(() {
-      mockUserRepo = MockUserRepository();
-      mockProductRepo = MockProductRepository();
+      userRepo = MockUserRepository();
+      productRepo = MockProductRepository();
     });
 
-    testWidgets('renders email and password fields', (tester) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
+    testWidgets('renders form fields and login button', (tester) async {
+      await tester.pumpWidget(_loginApp(userRepo, productRepo));
 
       expect(find.byType(TextField), findsNWidgets(2));
       expect(find.text('Introduix el email'), findsOneWidget);
       expect(find.text('Introduix la contrasenya'), findsOneWidget);
-    });
-
-    testWidgets('renders login button', (tester) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
-
       expect(find.text('Login'), findsOneWidget);
       expect(find.byType(ElevatedButton), findsOneWidget);
+      expect(find.textContaining('You are logged in as:'), findsNothing);
     });
 
-    testWidgets('can enter email and password text', (tester) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
+    testWidgets('can enter text and login successfully', (tester) async {
+      await tester.pumpWidget(_loginApp(userRepo, productRepo));
 
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix el email'),
-        'user@example.com',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix la contrasenya'),
-        'password123',
-      );
+      await tester.enterText(find.widgetWithText(TextField, 'Introduix el email'), 'user@test.com');
+      await tester.enterText(find.widgetWithText(TextField, 'Introduix la contrasenya'), 'pass');
       await tester.pump();
 
-      expect(find.text('user@example.com'), findsOneWidget);
-      expect(find.text('password123'), findsOneWidget);
-    });
-
-    testWidgets('tapping login triggers authentication', (tester) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
-
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix el email'),
-        'test@test.com',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix la contrasenya'),
-        'pass',
-      );
+      expect(find.text('user@test.com'), findsOneWidget);
+      expect(find.text('pass'), findsOneWidget);
 
       await tester.tap(find.text('Login'));
       await tester.pumpAndSettle();
 
-      expect(mockUserRepo.userToReturn?.authenticated, isTrue);
-    });
-
-    testWidgets('shows authenticated message after login', (tester) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
-
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix el email'),
-        'user@test.com',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextField, 'Introduix la contrasenya'),
-        'pwd',
-      );
-      await tester.tap(find.text('Login'));
-      await tester.pumpAndSettle();
-
+      expect(userRepo.userToReturn?.authenticated, isTrue);
       expect(find.textContaining('You are logged in as:'), findsOneWidget);
-    });
-
-    testWidgets('does not show authenticated message before login', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createLoginTestApp(
-          mockUserRepo: mockUserRepo,
-          mockProductRepo: mockProductRepo,
-        ),
-      );
-
-      expect(find.textContaining('You are logged in as:'), findsNothing);
     });
   });
 
   // ===== ProductCreationPage =====
-  group('ProductCreationPage Widget', () {
-    late MockProductRepository mockProductRepo;
+  group('ProductCreationPage', () {
+    late MockProductRepository productRepo;
 
     setUp(() {
-      mockProductRepo = MockProductRepository();
+      productRepo = MockProductRepository();
     });
 
-    testWidgets('renders title, description and price fields', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
+    testWidgets('renders form with AppBar, fields and button', (tester) async {
+      await tester.pumpWidget(_creationApp(productRepo));
 
+      expect(find.text('Nou Producte'), findsOneWidget);
       expect(find.text('Títol'), findsOneWidget);
       expect(find.text('Descripció'), findsOneWidget);
       expect(find.text('Preu'), findsOneWidget);
-    });
-
-    testWidgets('renders AppBar with correct title', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
-      expect(find.text('Nou Producte'), findsOneWidget);
-    });
-
-    testWidgets('renders create button', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
       expect(find.text('Crear Producte'), findsOneWidget);
       expect(find.byType(ElevatedButton), findsOneWidget);
     });
 
-    testWidgets('shows validation error when title is empty', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
+    testWidgets('validates empty fields on submit', (tester) async {
+      await tester.pumpWidget(_creationApp(productRepo));
 
+      // Empty title
       await tester.tap(find.text('Crear Producte'));
       await tester.pumpAndSettle();
+      expect(find.text('Si us plau, introdueix un títol per al producte'), findsOneWidget);
 
-      expect(
-        find.text('Si us plau, introdueix un títol per al producte'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows validation error when description is empty', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
-      await tester.enterText(find.byType(TextFormField).at(0), 'My Title');
-      await tester.tap(find.text('Crear Producte'));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Si us plau, introdueix una descripció per al producte'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('shows validation error when price is empty', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
+      // Fill title, empty description
       await tester.enterText(find.byType(TextFormField).at(0), 'Title');
+      await tester.tap(find.text('Crear Producte'));
+      await tester.pumpAndSettle();
+      expect(find.text('Si us plau, introdueix una descripció per al producte'), findsOneWidget);
+
+      // Fill description, empty price
       await tester.enterText(find.byType(TextFormField).at(1), 'Desc');
       await tester.tap(find.text('Crear Producte'));
       await tester.pumpAndSettle();
-
       expect(find.text('Si us plau, introdueix un preu'), findsOneWidget);
-    });
 
-    testWidgets('shows validation error when price is not a number', (
-      tester,
-    ) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
-      await tester.enterText(find.byType(TextFormField).at(0), 'Title');
-      await tester.enterText(find.byType(TextFormField).at(1), 'Desc');
+      // Invalid price
       await tester.enterText(find.byType(TextFormField).at(2), 'abc');
       await tester.tap(find.text('Crear Producte'));
       await tester.pumpAndSettle();
-
-      expect(
-        find.text('Si us plau, introdueix un número vàlid'),
-        findsOneWidget,
-      );
+      expect(find.text('Si us plau, introdueix un número vàlid'), findsOneWidget);
     });
 
-    testWidgets('creates product successfully and shows snackbar', (
-      tester,
-    ) async {
-      mockProductRepo.productToReturn = Product(
-        userId: 'u1',
-        id: 1,
-        title: 'New',
-        price: 10.0,
-        description: 'Desc',
-        createdAt: DateTime(2025, 1, 1),
-      );
-      mockProductRepo.productsToReturn = [mockProductRepo.productToReturn!];
+    testWidgets('creates product, shows snackbar and clears fields', (tester) async {
+      productRepo.productToReturn = _makeProduct(title: 'New', price: 10.0, desc: 'Desc');
+      productRepo.productsToReturn = [productRepo.productToReturn!];
 
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
+      await tester.pumpWidget(_creationApp(productRepo));
 
       await tester.enterText(find.byType(TextFormField).at(0), 'New');
       await tester.enterText(find.byType(TextFormField).at(1), 'Desc');
@@ -392,40 +226,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Producte creat!!!'), findsOneWidget);
-    });
 
-    testWidgets('clears fields after successful creation', (tester) async {
-      mockProductRepo.productToReturn = Product(
-        userId: 'u1',
-        id: 1,
-        title: 'Widget',
-        price: 5.0,
-        description: 'Nice',
-        createdAt: DateTime(2025, 1, 1),
-      );
-      mockProductRepo.productsToReturn = [mockProductRepo.productToReturn!];
-
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
-
-      await tester.enterText(find.byType(TextFormField).at(0), 'Widget');
-      await tester.enterText(find.byType(TextFormField).at(1), 'Nice');
-      await tester.enterText(find.byType(TextFormField).at(2), '5.0');
-      await tester.tap(find.text('Crear Producte'));
-      await tester.pumpAndSettle();
-
-      // Fields should be cleared
-      final titleField = tester.widget<TextFormField>(
-        find.byType(TextFormField).at(0),
-      );
+      final titleField = tester.widget<TextFormField>(find.byType(TextFormField).at(0));
       expect(titleField.controller?.text, '');
     });
 
     testWidgets('can enter text in all form fields', (tester) async {
-      await tester.pumpWidget(
-        createCreationTestApp(mockProductRepo: mockProductRepo),
-      );
+      await tester.pumpWidget(_creationApp(productRepo));
 
       await tester.enterText(find.byType(TextFormField).at(0), 'Test Title');
       await tester.enterText(find.byType(TextFormField).at(1), 'Test Desc');
@@ -439,113 +246,53 @@ void main() {
   });
 
   // ===== ProductListPage =====
-  group('ProductListPage Widget', () {
-    late MockProductRepository mockProductRepo;
+  group('ProductListPage', () {
+    late MockProductRepository productRepo;
 
     setUp(() {
-      mockProductRepo = MockProductRepository();
+      productRepo = MockProductRepository();
     });
 
-    testWidgets('renders AppBar with correct title', (tester) async {
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
+    testWidgets('shows products with title, subtitle and delete icon', (tester) async {
+      productRepo.productsToReturn = [
+        _makeProduct(id: 1, title: 'Product A', price: 10.0, desc: 'Desc A'),
+        _makeProduct(id: 2, title: 'Product B', price: 20.5, desc: 'Desc B'),
+      ];
+
+      await tester.pumpWidget(_listApp(productRepo));
       await tester.pumpAndSettle();
 
       expect(find.text('Llista de Productes'), findsOneWidget);
-    });
-
-    testWidgets('shows products when loaded', (tester) async {
-      mockProductRepo.productsToReturn = [
-        Product(
-          userId: 'u1',
-          id: 1,
-          title: 'Product A',
-          price: 10.0,
-          description: 'Desc A',
-          createdAt: DateTime(2025, 1, 1),
-        ),
-        Product(
-          userId: 'u2',
-          id: 2,
-          title: 'Product B',
-          price: 20.5,
-          description: 'Desc B',
-          createdAt: DateTime(2025, 2, 1),
-        ),
-      ];
-
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
-      await tester.pumpAndSettle();
-
       expect(find.text('Product A'), findsOneWidget);
       expect(find.text('Product B'), findsOneWidget);
       expect(find.text('Desc A - 10.0€'), findsOneWidget);
       expect(find.text('Desc B - 20.5€'), findsOneWidget);
-    });
-
-    testWidgets('shows delete icon for each product', (tester) async {
-      mockProductRepo.productsToReturn = [
-        Product(
-          userId: 'u1',
-          id: 1,
-          title: 'P1',
-          price: 5.0,
-          description: 'D1',
-          createdAt: DateTime(2025, 1, 1),
-        ),
-      ];
-
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byIcon(Icons.delete), findsOneWidget);
+      expect(find.byIcon(Icons.delete), findsNWidgets(2));
     });
 
     testWidgets('tapping delete calls eliminarProducte', (tester) async {
-      mockProductRepo.productsToReturn = [
-        Product(
-          userId: 'u1',
-          id: 42,
-          title: 'To Delete',
-          price: 5.0,
-          description: 'D',
-          createdAt: DateTime(2025, 1, 1),
-        ),
-      ];
+      productRepo.productsToReturn = [_makeProduct(id: 42, title: 'To Delete')];
 
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
+      await tester.pumpWidget(_listApp(productRepo));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete));
       await tester.pumpAndSettle();
 
-      expect(mockProductRepo.lastDeletedId, 42);
+      expect(productRepo.lastDeletedId, 42);
     });
 
     testWidgets('shows empty list when no products', (tester) async {
-      mockProductRepo.productsToReturn = [];
-
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
+      await tester.pumpWidget(_listApp(productRepo));
       await tester.pumpAndSettle();
 
       expect(find.byType(ListTile), findsNothing);
     });
 
     testWidgets('shows error message when loading fails', (tester) async {
-      mockProductRepo.exceptionToThrow = Exception('Network error');
+      productRepo.exceptionToThrow = Exception('Network error');
 
-      await tester.pumpWidget(
-        createListTestApp(mockProductRepo: mockProductRepo),
-      );
+      await tester.pumpWidget(_listApp(productRepo));
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Error:'), findsOneWidget);
@@ -553,10 +300,11 @@ void main() {
   });
 
   // ===== MainArea =====
-  group('MainArea Widget', () {
-    testWidgets('renders child page inside Expanded container', (tester) async {
+  group('MainArea', () {
+    testWidgets('renders child in Expanded with primaryContainer color', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
+          theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue)),
           home: Scaffold(
             body: Row(children: const [MainArea(page: Text('Test Page'))]),
           ),
@@ -565,22 +313,121 @@ void main() {
 
       expect(find.text('Test Page'), findsOneWidget);
       expect(find.byType(Expanded), findsOneWidget);
-    });
-
-    testWidgets('applies primaryContainer color', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          ),
-          home: Scaffold(
-            body: Row(children: const [MainArea(page: Text('Colored'))]),
-          ),
-        ),
-      );
-
       final container = tester.widget<Container>(find.byType(Container).last);
       expect(container.color, isNotNull);
+    });
+  });
+
+  // ===== MyHomePage =====
+  group('MyHomePage', () {
+    late MockUserRepository userRepo;
+    late MockProductRepository productRepo;
+
+    setUp(() {
+      userRepo = MockUserRepository();
+      productRepo = MockProductRepository();
+    });
+
+    testWidgets('shows LoginPage when not authenticated', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 800, height: 600, authenticated: false);
+
+      expect(find.byType(LoginPage), findsOneWidget);
+    });
+
+    testWidgets('wide layout: extended NavigationRail with correct destinations and default page', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 800, height: 600);
+
+      expect(find.byType(ProductCreationPage), findsOneWidget);
+      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(MainArea), findsOneWidget);
+      expect(find.byType(SafeArea), findsWidgets);
+
+      final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+      expect(rail.extended, isTrue);
+
+      expect(find.text('Crear'), findsOneWidget);
+      expect(find.text('Llistar'), findsOneWidget);
+      expect(find.text('Logout'), findsOneWidget);
+      expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+      expect(find.byIcon(Icons.list), findsOneWidget);
+      expect(find.byIcon(Icons.logout), findsOneWidget);
+    });
+
+    testWidgets('medium layout: non-extended NavigationRail', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 500, height: 600);
+
+      expect(find.byType(NavigationRail), findsOneWidget);
+      final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
+      expect(rail.extended, isFalse);
+    });
+
+    testWidgets('narrow layout: NavigationBar with correct destinations', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 400, height: 800);
+
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+      expect(find.text('Crear'), findsOneWidget);
+      expect(find.text('Llista'), findsOneWidget);
+      expect(find.text('Sortir'), findsOneWidget);
+    });
+
+    testWidgets('NavigationRail: navigate between pages', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 800, height: 600);
+
+      // Go to list
+      await tester.tap(find.text('Llistar'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductListPage), findsOneWidget);
+      expect(find.byType(ProductCreationPage), findsNothing);
+
+      // Go back to create
+      await tester.tap(find.text('Crear'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductCreationPage), findsOneWidget);
+    });
+
+    testWidgets('NavigationRail: logout returns to LoginPage', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 800, height: 600);
+
+      await tester.tap(find.text('Logout'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(NavigationRail), findsNothing);
+    });
+
+    testWidgets('NavigationBar: navigate and logout on narrow', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 400, height: 800);
+
+      // Navigate to list
+      await tester.tap(find.text('Llista'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProductListPage), findsOneWidget);
+
+      // Logout
+      await tester.tap(find.text('Sortir'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('logout resets to creation page after re-login', (tester) async {
+      await _pumpHome(tester, userRepo: userRepo, productRepo: productRepo, width: 800, height: 600);
+
+      // Navigate to list, then logout
+      await tester.tap(find.text('Llistar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Logout'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LoginPage), findsOneWidget);
+
+      // Login again
+      await tester.enterText(find.widgetWithText(TextField, 'Introduix el email'), 'test@test.com');
+      await tester.enterText(find.widgetWithText(TextField, 'Introduix la contrasenya'), 'pass');
+      await tester.tap(find.text('Login'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductCreationPage), findsOneWidget);
     });
   });
 }

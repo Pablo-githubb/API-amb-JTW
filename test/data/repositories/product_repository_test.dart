@@ -5,7 +5,6 @@ import 'package:api_amb_jwt/data/repositories/user_repository.dart';
 import 'package:api_amb_jwt/data/services/product_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// Mock manual de IProductService
 class MockProductService implements IProductService {
   Product? productToReturn;
   List<Product>? productsToReturn;
@@ -37,7 +36,6 @@ class MockProductService implements IProductService {
   }
 }
 
-// Mock manual de IUserRepository
 class MockUserRepository implements IUserRepository {
   User? userToReturn;
 
@@ -51,143 +49,78 @@ class MockUserRepository implements IUserRepository {
   }
 
   @override
-  Future<User> validateLogin(String email, String password) async {
-    return userToReturn!;
-  }
+  Future<User> validateLogin(String email, String password) async => userToReturn!;
+}
+
+Product _makeProduct({int id = 0, String title = 'T', double price = 1.0, String desc = 'D'}) {
+  return Product(userId: '', id: id, title: title, price: price, description: desc, createdAt: DateTime(2025));
 }
 
 void main() {
-  late MockProductService mockProductService;
-  late MockUserRepository mockUserRepository;
-  late ProductRepository productRepository;
-
-  final authenticatedUser = User(
-    email: 'test@test.com',
-    password: '',
-    authenticated: true,
-    accessToken: 'test-jwt-token',
-  );
+  late MockProductService mockService;
+  late MockUserRepository mockUserRepo;
+  late ProductRepository repo;
 
   setUp(() {
-    mockProductService = MockProductService();
-    mockUserRepository = MockUserRepository();
-    mockUserRepository.userToReturn = authenticatedUser;
-    productRepository = ProductRepository(
-      productService: mockProductService,
-      userRepository: mockUserRepository,
-    );
+    mockService = MockProductService();
+    mockUserRepo = MockUserRepository();
+    mockUserRepo.userToReturn = User(email: 'test@test.com', password: '', authenticated: true, accessToken: 'test-jwt-token');
+    repo = ProductRepository(productService: mockService, userRepository: mockUserRepo);
   });
 
   group('ProductRepository', () {
-    group('afegirProducte', () {
-      test('calls service with correct token and product', () async {
-        final product = Product(
-          userId: '',
-          id: 0,
-          title: 'Test',
-          price: 10.0,
-          description: 'Desc',
-          createdAt: DateTime(2025, 1, 1),
-        );
-        final createdProduct = Product(
-          userId: 'user-1',
-          id: 1,
-          title: 'Test',
-          price: 10.0,
-          description: 'Desc',
-          createdAt: DateTime(2025, 1, 1),
-        );
-        mockProductService.productToReturn = createdProduct;
+    test('afegirProducte calls service with correct token and returns result', () async {
+      final product = _makeProduct(title: 'Test', price: 10.0, desc: 'Desc');
+      mockService.productToReturn = _makeProduct(id: 1, title: 'Test', price: 10.0, desc: 'Desc');
 
-        final result = await productRepository.afegirProducte(product);
+      final result = await repo.afegirProducte(product);
 
-        expect(mockProductService.lastToken, 'test-jwt-token');
-        expect(mockProductService.lastCreatedProduct, product);
-        expect(result.id, 1);
-        expect(result.title, 'Test');
-      });
-
-      test('throws when service throws', () {
-        mockProductService.exceptionToThrow = Exception('Create failed');
-        final product = Product(
-          userId: '',
-          id: 0,
-          title: 'T',
-          price: 1.0,
-          description: 'D',
-          createdAt: DateTime.now(),
-        );
-
-        expect(
-          () => productRepository.afegirProducte(product),
-          throwsA(isA<Exception>()),
-        );
-      });
+      expect(mockService.lastToken, 'test-jwt-token');
+      expect(mockService.lastCreatedProduct, product);
+      expect(result.id, 1);
+      expect(result.title, 'Test');
     });
 
-    group('getProducts', () {
-      test('returns list of products from service', () async {
-        mockProductService.productsToReturn = [
-          Product(
-            userId: 'u1',
-            id: 1,
-            title: 'P1',
-            price: 5.0,
-            description: 'D1',
-            createdAt: DateTime(2025, 1, 1),
-          ),
-          Product(
-            userId: 'u2',
-            id: 2,
-            title: 'P2',
-            price: 15.0,
-            description: 'D2',
-            createdAt: DateTime(2025, 2, 1),
-          ),
-        ];
+    test('afegirProducte throws when service throws', () {
+      mockService.exceptionToThrow = Exception('Create failed');
 
-        final products = await productRepository.getProducts();
-
-        expect(products.length, 2);
-        expect(products[0].title, 'P1');
-        expect(products[1].title, 'P2');
-        expect(mockProductService.lastToken, 'test-jwt-token');
-      });
-
-      test('returns empty list when no products', () async {
-        mockProductService.productsToReturn = [];
-
-        final products = await productRepository.getProducts();
-
-        expect(products, isEmpty);
-      });
-
-      test('throws when service throws', () {
-        mockProductService.exceptionToThrow = Exception('Load failed');
-
-        expect(
-          () => productRepository.getProducts(),
-          throwsA(isA<Exception>()),
-        );
-      });
+      expect(() => repo.afegirProducte(_makeProduct()), throwsA(isA<Exception>()));
     });
 
-    group('eliminarProducte', () {
-      test('calls service with correct token and id', () async {
-        await productRepository.eliminarProducte(42);
+    test('getProducts returns list from service and handles empty', () async {
+      mockService.productsToReturn = [
+        _makeProduct(id: 1, title: 'P1'),
+        _makeProduct(id: 2, title: 'P2'),
+      ];
 
-        expect(mockProductService.lastToken, 'test-jwt-token');
-        expect(mockProductService.lastDeletedId, 42);
-      });
+      final products = await repo.getProducts();
+      expect(products.length, 2);
+      expect(products[0].title, 'P1');
+      expect(products[1].title, 'P2');
+      expect(mockService.lastToken, 'test-jwt-token');
 
-      test('throws when service throws', () {
-        mockProductService.exceptionToThrow = Exception('Delete failed');
+      // Empty list
+      mockService.productsToReturn = [];
+      expect(await repo.getProducts(), isEmpty);
+    });
 
-        expect(
-          () => productRepository.eliminarProducte(1),
-          throwsA(isA<Exception>()),
-        );
-      });
+    test('getProducts throws when service throws', () {
+      mockService.exceptionToThrow = Exception('Load failed');
+
+      expect(() => repo.getProducts(), throwsA(isA<Exception>()));
+    });
+
+    test('eliminarProducte calls service with correct token and id', () async {
+      await repo.eliminarProducte(42);
+
+      expect(mockService.lastToken, 'test-jwt-token');
+      expect(mockService.lastDeletedId, 42);
+    });
+
+    test('eliminarProducte throws when service throws', () {
+      mockService.exceptionToThrow = Exception('Delete failed');
+
+      expect(() => repo.eliminarProducte(1), throwsA(isA<Exception>()));
     });
   });
 }

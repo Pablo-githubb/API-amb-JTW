@@ -5,16 +5,14 @@ void main() {
   group('Product', () {
     group('fromJson', () {
       test('parses complete JSON correctly', () {
-        final json = {
+        final product = Product.fromJson({
           'user_id': 'abc-123',
           'id': 42,
           'title': 'Test Product',
           'price': 19.99,
           'description': 'A test product',
           'created_at': '2025-01-15T10:30:00Z',
-        };
-
-        final product = Product.fromJson(json);
+        });
 
         expect(product.userId, 'abc-123');
         expect(product.id, 42);
@@ -24,152 +22,61 @@ void main() {
         expect(product.createdAt, DateTime.parse('2025-01-15T10:30:00Z'));
       });
 
-      test('uses default values for missing fields', () {
-        final json = <String, dynamic>{};
+      test('uses defaults for missing/null fields and handles type coercion', () {
+        // Empty JSON -> all defaults
+        final empty = Product.fromJson(<String, dynamic>{});
+        expect(empty.userId, '');
+        expect(empty.id, 0);
+        expect(empty.title, '');
+        expect(empty.price, 0.0);
+        expect(empty.description, '');
+        expect(empty.createdAt.difference(DateTime.now()).inSeconds.abs(), lessThan(2));
 
-        final product = Product.fromJson(json);
+        // Null created_at -> DateTime.now()
+        final nullDate = Product.fromJson({'created_at': null});
+        expect(nullDate.createdAt.difference(DateTime.now()).inSeconds.abs(), lessThan(2));
 
-        expect(product.userId, '');
-        expect(product.id, 0);
-        expect(product.title, '');
-        expect(product.price, 0.0);
-        expect(product.description, '');
-        // createdAt should be close to now since created_at is null
-        expect(
-          product.createdAt.difference(DateTime.now()).inSeconds.abs(),
-          lessThan(2),
-        );
-      });
+        // Numeric user_id -> converted to string
+        expect(Product.fromJson({'user_id': 12345, 'created_at': '2025-06-01T00:00:00Z'}).userId, '12345');
 
-      test('handles null created_at by using DateTime.now()', () {
-        final json = {
-          'title': 'No Date',
-          'created_at': null,
-        };
+        // Null user_id -> empty string
+        expect(Product.fromJson({'user_id': null, 'created_at': '2025-06-01T00:00:00Z'}).userId, '');
 
-        final product = Product.fromJson(json);
+        // Integer price -> double
+        expect(Product.fromJson({'price': 10, 'created_at': '2025-06-01T00:00:00Z'}).price, 10.0);
 
-        expect(
-          product.createdAt.difference(DateTime.now()).inSeconds.abs(),
-          lessThan(2),
-        );
-      });
-
-      test('handles numeric user_id by converting to string', () {
-        final json = {
-          'user_id': 12345,
-          'title': 'Numeric ID',
-          'created_at': '2025-06-01T00:00:00Z',
-        };
-
-        final product = Product.fromJson(json);
-
-        expect(product.userId, '12345');
-      });
-
-      test('handles integer price as num', () {
-        final json = {
-          'price': 10,
-          'created_at': '2025-06-01T00:00:00Z',
-        };
-
-        final product = Product.fromJson(json);
-
-        expect(product.price, 10.0);
-      });
-
-      test('handles null price', () {
-        final json = {
-          'price': null,
-          'created_at': '2025-06-01T00:00:00Z',
-        };
-
-        final product = Product.fromJson(json);
-
-        expect(product.price, 0.0);
-      });
-
-      test('handles null user_id', () {
-        final json = {
-          'user_id': null,
-          'created_at': '2025-06-01T00:00:00Z',
-        };
-
-        final product = Product.fromJson(json);
-
-        expect(product.userId, '');
+        // Null price -> 0.0
+        expect(Product.fromJson({'price': null, 'created_at': '2025-06-01T00:00:00Z'}).price, 0.0);
       });
     });
 
     group('toJson', () {
-      test('includes all fields when userId and id are valid', () {
-        final product = Product(
-          userId: 'user-1',
-          id: 5,
-          title: 'Widget',
-          price: 29.99,
-          description: 'A useful widget',
-          createdAt: DateTime(2025, 1, 1),
-        );
+      test('includes user_id and id when valid, excludes when empty/zero', () {
+        // All fields valid
+        final full = Product(userId: 'user-1', id: 5, title: 'Widget', price: 29.99, description: 'Desc', createdAt: DateTime(2025));
+        final fullJson = full.toJson();
+        expect(fullJson['title'], 'Widget');
+        expect(fullJson['price'], 29.99);
+        expect(fullJson['description'], 'Desc');
+        expect(fullJson['user_id'], 'user-1');
+        expect(fullJson['id'], 5);
 
-        final json = product.toJson();
+        // Empty userId -> excluded
+        final noUser = Product(userId: '', id: 5, title: 'W', price: 1.0, description: 'D', createdAt: DateTime(2025));
+        expect(noUser.toJson().containsKey('user_id'), isFalse);
+        expect(noUser.toJson()['id'], 5);
 
-        expect(json['title'], 'Widget');
-        expect(json['price'], 29.99);
-        expect(json['description'], 'A useful widget');
-        expect(json['user_id'], 'user-1');
-        expect(json['id'], 5);
-      });
+        // Zero id -> excluded
+        final noId = Product(userId: 'user-1', id: 0, title: 'W', price: 1.0, description: 'D', createdAt: DateTime(2025));
+        expect(noId.toJson().containsKey('id'), isFalse);
+        expect(noId.toJson()['user_id'], 'user-1');
 
-      test('excludes user_id when userId is empty', () {
-        final product = Product(
-          userId: '',
-          id: 5,
-          title: 'Widget',
-          price: 29.99,
-          description: 'A useful widget',
-          createdAt: DateTime(2025, 1, 1),
-        );
-
-        final json = product.toJson();
-
-        expect(json.containsKey('user_id'), isFalse);
-        expect(json['id'], 5);
-      });
-
-      test('excludes id when id is 0', () {
-        final product = Product(
-          userId: 'user-1',
-          id: 0,
-          title: 'Widget',
-          price: 29.99,
-          description: 'A useful widget',
-          createdAt: DateTime(2025, 1, 1),
-        );
-
-        final json = product.toJson();
-
-        expect(json.containsKey('id'), isFalse);
-        expect(json['user_id'], 'user-1');
-      });
-
-      test('excludes both user_id and id when empty/zero', () {
-        final product = Product(
-          userId: '',
-          id: 0,
-          title: 'Minimal',
-          price: 0.0,
-          description: '',
-          createdAt: DateTime(2025, 1, 1),
-        );
-
-        final json = product.toJson();
-
-        expect(json.containsKey('user_id'), isFalse);
-        expect(json.containsKey('id'), isFalse);
-        expect(json['title'], 'Minimal');
-        expect(json['price'], 0.0);
-        expect(json['description'], '');
+        // Both empty/zero -> both excluded
+        final minimal = Product(userId: '', id: 0, title: 'Min', price: 0.0, description: '', createdAt: DateTime(2025));
+        final minJson = minimal.toJson();
+        expect(minJson.containsKey('user_id'), isFalse);
+        expect(minJson.containsKey('id'), isFalse);
+        expect(minJson['title'], 'Min');
       });
     });
   });
