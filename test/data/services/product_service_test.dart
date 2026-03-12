@@ -118,65 +118,61 @@ void main() {
     expect(products.length, 2);
     expect(products[0].title, 'A');
     expect(products[1].title, 'B');
+  });
+  // Llanca excepcio si la resposta no es 200
+  test('error en resposta no-200', () async {
+    final mockClient = MockClient(
+      (_) async => http.Response('Unauthorized', 401),
+    );
 
-    // Llanca excepcio si la resposta no es 200
-    test('error en resposta no-200', () async {
-      final mockClient = MockClient(
-        (_) async => http.Response('Unauthorized', 401),
-      );
+    final service = ProductService(client: mockClient);
 
-      final service = ProductService(client: mockClient);
-
-      expect(
-        () => service.getProducts('bad-token'),
-        throwsA(
-          isA<Exception>().having(
-            (e) => e.toString(),
-            'msg',
-            contains('Failed to load products'),
-          ),
+    expect(
+      () => service.getProducts('bad-token'),
+      throwsA(
+        isA<Exception>().having(
+          (e) => e.toString(),
+          'msg',
+          contains('Failed to load products'),
         ),
-      );
-
-      // Comprova DELETE amb URL i headers correctes, exit en 200 i 204
-      test('DELETE correcte exit 200 i 204', () async {
-        // Test 200
-        var mockClient = MockClient((request) async {
-          expect(request.method, 'DELETE');
-          expect(request.url.toString(), contains('/products?id=eq.42'));
-          expect(request.headers['Authorization'], 'Bearer my-token');
-          expect(request.headers['apikey'], isNotEmpty);
-          return http.Response('', 200);
-        });
-
-        var service = ProductService(client: mockClient);
-        await service.eliminarProducte('my-token', 42);
-
-        // Test 204
-        mockClient = MockClient((_) async => http.Response('', 204));
-        service = ProductService(client: mockClient);
-        await service.eliminarProducte('my-token', 1);
-      });
-
-      // Llanca excepcio en resposta d'error
-      test('error en resposta DELETE', () async {
-        final mockClient = MockClient(
-          (_) async => http.Response('Forbidden', 403),
-        );
-
-        final service = ProductService(client: mockClient);
-
-        expect(
-          () => service.eliminarProducte('tok', 1),
-          throwsA(
-            isA<Exception>().having(
-              (e) => e.toString(),
-              'msg',
-              contains('Failed to delete product'),
-            ),
-          ),
-        );
-      });
+      ),
+    );
+  });
+  // Comprova DELETE amb URL i headers correctes, exit en 200 i 204
+  test('DELETE correcte exit 200 i 204', () async {
+    // Test 200
+    var mockClient = MockClient((request) async {
+      expect(request.method, 'DELETE');
+      expect(request.url.toString(), contains('/products?id=eq.42'));
+      expect(request.headers['Authorization'], 'Bearer my-token');
+      expect(request.headers['apikey'], isNotEmpty);
+      return http.Response('', 200);
     });
+
+    var service = ProductService(client: mockClient);
+    await service.eliminarProducte('my-token', 42);
+
+    // Test 204
+    mockClient = MockClient((_) async => http.Response('', 204));
+    service = ProductService(client: mockClient);
+    await service.eliminarProducte('my-token', 1);
+  });
+
+  // Llanca excepcio en resposta d'error
+  test('error en resposta DELETE', () async {
+    final mockClient = MockClient((_) async => http.Response('Forbidden', 403));
+
+    final service = ProductService(client: mockClient);
+
+    expect(
+      () => service.eliminarProducte('tok', 1),
+      throwsA(
+        isA<Exception>().having(
+          (e) => e.toString(),
+          'msg',
+          contains('Failed to delete product'),
+        ),
+      ),
+    );
   });
 }
